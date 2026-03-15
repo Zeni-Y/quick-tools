@@ -88,6 +88,99 @@ main {
   align-items: center;
 }
 
+/* ── Sub-navigation (image tools) ── */
+.sub-nav {
+  width: 72px;
+  min-width: 72px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  gap: 2px;
+}
+.sub-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text2);
+  padding: 10px 4px;
+  cursor: pointer;
+  font-size: 0.65rem;
+  transition: color 0.2s, background 0.2s;
+  border-left: 3px solid transparent;
+}
+.sub-nav-btn:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+.sub-nav-btn.active {
+  color: var(--accent);
+  background: var(--surface2);
+  border-left-color: var(--accent);
+}
+.sub-nav-btn svg {
+  flex-shrink: 0;
+}
+
+/* ── Sidebar input ── */
+.sidebar-input {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  width: 100%;
+}
+.sidebar-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ── Tool switcher ── */
+.tool-switcher {
+  display: flex;
+  gap: 4px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+.tool-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text2);
+  padding: 7px 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.tool-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.tool-btn.active { color: var(--accent); background: var(--bg); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+.tool-btn svg { pointer-events: none; }
+
+/* ── Keyboard shortcut badge ── */
+kbd {
+  display: inline-block;
+  font-family: inherit;
+  font-size: 0.65rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-left: 6px;
+  line-height: 1.5;
+  color: var(--text2);
+  vertical-align: middle;
+}
+
 /* ── Sidebar sections ── */
 .sidebar-section {
   padding: 16px;
@@ -346,6 +439,22 @@ main {
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .panel-layout { flex-direction: column; }
+  .sub-nav {
+    width: 100%;
+    min-width: 100%;
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0 8px;
+    overflow-x: auto;
+  }
+  .sub-nav-btn {
+    flex-direction: row;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    padding: 8px 12px;
+  }
+  .sub-nav-btn.active { border-left-color: transparent; border-bottom-color: var(--accent); }
   .panel-sidebar {
     width: 100%;
     min-width: 100%;
