@@ -27,3 +27,4 @@ import './mosaic.js';
 import './resize.js';
 import './crop.js';
 import './pdf.js';
+import './text.js';

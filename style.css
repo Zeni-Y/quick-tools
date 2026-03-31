@@ -475,6 +475,69 @@ kbd {
   text-align: center;
 }
 
+/* ── Text Tool ── */
+.text-main {
+  padding: 16px !important;
+  align-items: stretch !important;
+}
+.text-panels {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+.text-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.text-panel-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.text-area {
+  flex: 1;
+  min-height: 400px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: none;
+}
+.text-area:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.text-area[readonly] {
+  background: var(--surface2);
+  color: var(--text2);
+}
+.text-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.text-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text2);
+}
+.text-stat-row span:last-child {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .panel-layout { flex-direction: column; }
@@ -513,4 +576,5 @@ kbd {
     border-bottom: 1px solid var(--border);
   }
   .pdf-preview-inner canvas { max-height: 50vh; }
+  .text-panels { flex-direction: column; }
 }
