@@ -16,10 +16,13 @@ let trimPreviewInfo = null;  // { origPage, pageWidthPts, pageHeightPts }
 
 const container = document.getElementById('thumbnails');
 
+const PDFJS_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.124';
+const CMAP_URL  = PDFJS_CDN + '/cmaps/';
+
 async function loadPdfJs() {
   if (window.pdfjsLib) return window.pdfjsLib;
-  const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.124/build/pdf.min.mjs');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.124/build/pdf.worker.min.mjs';
+  const pdfjsLib = await import(PDFJS_CDN + '/build/pdf.min.mjs');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN + '/build/pdf.worker.min.mjs';
   window.pdfjsLib = pdfjsLib;
   return pdfjsLib;
 }
@@ -208,7 +211,7 @@ async function loadPDF(file) {
     const pdfjsLib = await loadPdfJs();
     const buf = await file.arrayBuffer();
     pdfRawBytes = new Uint8Array(buf.slice(0));          // pdf-lib用に独立コピー
-    pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;  // pdf.js用
+    pdfDoc = await pdfjsLib.getDocument({ data: buf, cMapUrl: CMAP_URL, cMapPacked: true }).promise;  // pdf.js用
     activePages = Array.from({ length: pdfDoc.numPages }, (_, i) => i + 1);
     pageRotations = {};
     for (let i = 1; i <= pdfDoc.numPages; i++) pageRotations[i] = 0;
@@ -690,7 +693,7 @@ setupDrop('pdf-comment-drop', 'pdf-comment-input', async (file) => {
   try {
     const pdfjsLib = await loadPdfJs();
     const buf = await file.arrayBuffer();
-    commentsPdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+    commentsPdfDoc = await pdfjsLib.getDocument({ data: buf, cMapUrl: CMAP_URL, cMapPacked: true }).promise;
     document.getElementById('comment-file-label').textContent =
       `読み込み済み: ${file.name} (${commentsPdfDoc.numPages}ページ)`;
     document.getElementById('comment-file-info').style.display = '';
