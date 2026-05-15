@@ -543,17 +543,32 @@ function annTypeJa(subtype) { return ANN_TYPE_JA[subtype] || subtype || '不明'
 
 async function extractMarkedText(page, ann) {
   const markupTypes = new Set(['Highlight', 'Underline', 'StrikeOut', 'Squiggly']);
-  if (!markupTypes.has(ann.subtype) || !ann.rect) return null;
-  const [rx1, ry1, rx2, ry2] = ann.rect;
+  if (!markupTypes.has(ann.subtype)) return null;
+
+  // quadPoints gives per-line precision; each group of 8 = 4 corners of one line segment
+  const rects = [];
+  if (ann.quadPoints && ann.quadPoints.length >= 8) {
+    for (let i = 0; i + 7 < ann.quadPoints.length; i += 8) {
+      const xs = [ann.quadPoints[i], ann.quadPoints[i+2], ann.quadPoints[i+4], ann.quadPoints[i+6]];
+      const ys = [ann.quadPoints[i+1], ann.quadPoints[i+3], ann.quadPoints[i+5], ann.quadPoints[i+7]];
+      rects.push([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]);
+    }
+  } else if (ann.rect) {
+    rects.push(ann.rect);
+  }
+  if (rects.length === 0) return null;
+
   const content = await page.getTextContent();
   const TOL = 2;
   const matched = content.items
     .filter(item => {
       if (!item.str || !item.transform) return false;
       const tx = item.transform[4], ty = item.transform[5];
-      const iw = item.width ?? 0, ih = item.height ?? 0;
-      return tx + iw > rx1 - TOL && tx < rx2 + TOL &&
-             ty + ih > ry1 - TOL && ty < ry2 + TOL;
+      const iw = item.width ?? 0, ih = item.height || Math.abs(item.transform[3]) || 12;
+      return rects.some(([rx1, ry1, rx2, ry2]) =>
+        tx + iw > rx1 - TOL && tx < rx2 + TOL &&
+        ty + ih > ry1 - TOL && ty < ry2 + TOL
+      );
     })
     .map(i => i.str);
   return matched.length ? matched.join('') : null;
@@ -605,16 +620,31 @@ function buildPlainText(results) {
   }).join('\n\n');
 }
 
+function buildMarkdown(results) {
+  const lines = ['# PDFコメント抽出結果', ''];
+  for (const r of results) {
+    lines.push(`## P${r.page} — ${annTypeJa(r.subtype)}${r.author ? ' — ' + r.author : ''}`, '');
+    if (r.markedText) {
+      lines.push('> ' + r.markedText.replace(/\n/g, '\n> '), '');
+    }
+    if (r.contents) lines.push(r.contents, '');
+    lines.push('---', '');
+  }
+  return lines.join('\n');
+}
+
 function renderComments(results) {
-  const list    = document.getElementById('comment-list');
-  const hint    = document.getElementById('comment-empty-hint');
-  const copyBtn = document.getElementById('copy-comments-btn');
+  const list       = document.getElementById('comment-list');
+  const hint       = document.getElementById('comment-empty-hint');
+  const copyBtn    = document.getElementById('copy-comments-btn');
+  const saveBtn    = document.getElementById('save-markdown-btn');
   list.innerHTML = '';
   if (results.length === 0) {
     list.style.display = 'none';
     hint.style.display = '';
     hint.textContent = 'コメントが見つかりませんでした。';
     copyBtn.disabled = true;
+    saveBtn.disabled = true;
     return;
   }
   hint.style.display = 'none';
@@ -649,7 +679,9 @@ function renderComments(results) {
     list.appendChild(li);
   }
   copyBtn.disabled = false;
+  document.getElementById('save-markdown-btn').disabled = false;
   list.dataset.plain = buildPlainText(results);
+  list.dataset.markdown = buildMarkdown(results);
 }
 
 setupDrop('pdf-comment-drop', 'pdf-comment-input', async (file) => {
@@ -678,4 +710,17 @@ document.getElementById('copy-comments-btn').addEventListener('click', () => {
   navigator.clipboard.writeText(plain)
     .then(() => toast('クリップボードにコピーしました'))
     .catch(() => toast('コピーに失敗しました', true));
+});
+
+document.getElementById('save-markdown-btn').addEventListener('click', () => {
+  const md = document.getElementById('comment-list').dataset.markdown ?? '';
+  if (!md) return;
+  const blob = new Blob([md], { type: 'text/markdown; charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'comments.md';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Markdownで保存しました');
 });
