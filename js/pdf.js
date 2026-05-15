@@ -569,15 +569,17 @@ async function extractComments() {
       const page = await doc.getPage(pageNum);
       const annotations = await page.getAnnotations();
       for (const ann of annotations) {
-        const hasContent = ann.contents && ann.contents.trim();
-        if (!hasContent) continue;
+        if (ann.subtype === 'Popup') continue;
+        if (ann.subtype === 'Text' && ann.state) continue;
+        const contents = ann.richText?.str?.trim() || ann.contentsObj?.str?.trim() || '';
+        if (!contents) continue;
         let markedText = null;
         try { markedText = await extractMarkedText(page, ann); } catch (_) {}
         results.push({
           page: pageNum,
           subtype: ann.subtype,
-          author: ann.title ? ann.title.trim() : '',
-          contents: ann.contents.trim(),
+          author: ann.titleObj?.str?.trim() || ann.title || '',
+          contents,
           markedText,
         });
       }
