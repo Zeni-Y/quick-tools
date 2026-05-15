@@ -1,0 +1,28 @@
+{
+  "name": "quick-tools",
+  "version": "1.0.0",
+  "description": "ブラウザだけで使える軽量ツール集。サーバー不要で、すべての処理がクライアントサイドで完結します。",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zeni-Y/quick-tools.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Zeni-Y/quick-tools/issues"
+  },
+  "homepage": "https://github.com/Zeni-Y/quick-tools#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "http-server": "^14.1.1"
+  }
+}

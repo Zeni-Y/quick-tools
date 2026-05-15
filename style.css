@@ -30,10 +30,24 @@ header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
+.header-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
 header h1 {
   font-size: 1.3rem;
   font-weight: 600;
-  margin-bottom: 12px;
+}
+.version-badge {
+  font-size: 0.72rem;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-family: monospace;
 }
 .tabs {
   display: flex;
