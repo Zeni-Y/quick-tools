@@ -8,16 +8,18 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// ── Image sub-tab switching ──
+// ── Sub-tab switching (image + pdf 共通) ──
 document.querySelectorAll('.sub-nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const subtab = btn.dataset.subtab;
-    // Update active button
-    document.querySelectorAll('.sub-nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // Show matching sidebar, hide others
-    document.querySelectorAll('#tab-image .panel-sidebar').forEach(sb => {
+    const parentTab = btn.closest('.tab-content');
+    btn.closest('.sub-nav').querySelectorAll('.sub-nav-btn')
+      .forEach(b => b.classList.toggle('active', b === btn));
+    parentTab.querySelectorAll('.panel-sidebar').forEach(sb => {
       sb.style.display = sb.dataset.sidebar === subtab ? '' : 'none';
+    });
+    parentTab.querySelectorAll('[data-view]').forEach(v => {
+      v.style.display = v.dataset.view === subtab ? '' : 'none';
     });
   });
 });

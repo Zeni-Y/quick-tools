@@ -578,3 +578,67 @@ kbd {
   .pdf-preview-inner canvas { max-height: 50vh; }
   .text-panels { flex-direction: column; }
 }
+
+/* ── PDF Comments main view ── */
+.pdf-comments-main {
+  padding: 20px;
+  align-items: flex-start;
+  overflow-y: auto;
+}
+#comment-results-wrap {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.comment-empty-hint {
+  color: var(--text2);
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 40px;
+}
+.comment-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.comment-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s;
+}
+.comment-item:hover { border-color: var(--accent); }
+.comment-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.comment-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.comment-badge--page   { background: var(--accent); color: #fff; }
+.comment-badge--type   { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.comment-badge--author { background: transparent; color: var(--text2); border: 1px solid var(--border); font-weight: 400; font-style: italic; }
+.comment-marked-text {
+  font-size: 0.85rem;
+  color: var(--text2);
+  background: rgba(108, 99, 255, 0.08);
+  border-left: 3px solid var(--accent);
+  padding: 6px 10px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.comment-body {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

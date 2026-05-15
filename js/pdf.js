@@ -2,6 +2,7 @@ import { toast, setupDrop, showLoading, hideLoading } from './utils.js';
 
 let pdfDoc = null;        // pdf.js用（プレビュー表示）
 let pdfRawBytes = null;   // 元PDFのバイナリ（pdf-lib用、無劣化書き出し）
+let commentsPdfDoc = null;
 let activePages = [];
 let pageRotations = {};
 let selectedPages = new Set();
@@ -530,3 +531,149 @@ document.getElementById('trim-mode-btn').addEventListener('click', () => {
 });
 document.getElementById('apply-trim').addEventListener('click', applyTrim);
 document.getElementById('reset-trim').addEventListener('click', resetTrim);
+
+// ── コメント抽出 ──
+
+const ANN_TYPE_JA = {
+  Text: 'テキスト', Highlight: 'ハイライト', Underline: 'アンダーライン',
+  StrikeOut: '取り消し線', FreeText: 'フリーテキスト',
+  Ink: 'インク', Stamp: 'スタンプ',
+};
+function annTypeJa(subtype) { return ANN_TYPE_JA[subtype] || subtype || '不明'; }
+
+async function extractMarkedText(page, ann) {
+  const markupTypes = new Set(['Highlight', 'Underline', 'StrikeOut', 'Squiggly']);
+  if (!markupTypes.has(ann.subtype) || !ann.rect) return null;
+  const [rx1, ry1, rx2, ry2] = ann.rect;
+  const content = await page.getTextContent();
+  const TOL = 2;
+  const matched = content.items
+    .filter(item => {
+      if (!item.str || !item.transform) return false;
+      const tx = item.transform[4], ty = item.transform[5];
+      const iw = item.width ?? 0, ih = item.height ?? 0;
+      return tx + iw > rx1 - TOL && tx < rx2 + TOL &&
+             ty + ih > ry1 - TOL && ty < ry2 + TOL;
+    })
+    .map(i => i.str);
+  return matched.length ? matched.join('') : null;
+}
+
+async function extractComments() {
+  const doc = pdfDoc ?? commentsPdfDoc;
+  if (!doc) { toast('PDFを読み込んでください', true); return; }
+  showLoading();
+  const results = [];
+  try {
+    for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
+      const page = await doc.getPage(pageNum);
+      const annotations = await page.getAnnotations();
+      for (const ann of annotations) {
+        const hasContent = ann.contents && ann.contents.trim();
+        if (!hasContent) continue;
+        let markedText = null;
+        try { markedText = await extractMarkedText(page, ann); } catch (_) {}
+        results.push({
+          page: pageNum,
+          subtype: ann.subtype,
+          author: ann.title ? ann.title.trim() : '',
+          contents: ann.contents.trim(),
+          markedText,
+        });
+      }
+    }
+    renderComments(results);
+    toast(results.length === 0
+      ? 'コメントが見つかりませんでした'
+      : results.length + '件のコメントを抽出しました');
+  } catch (err) {
+    toast('コメント抽出エラー: ' + err.message, true);
+    console.error(err);
+  } finally {
+    hideLoading();
+  }
+}
+
+function buildPlainText(results) {
+  return results.map(r => {
+    const lines = [`[P${r.page}] [${annTypeJa(r.subtype)}]${r.author ? ' [' + r.author + ']' : ''}`];
+    if (r.markedText) lines.push('対象: ' + r.markedText);
+    if (r.contents)   lines.push('コメント: ' + r.contents);
+    return lines.join('\n');
+  }).join('\n\n');
+}
+
+function renderComments(results) {
+  const list    = document.getElementById('comment-list');
+  const hint    = document.getElementById('comment-empty-hint');
+  const copyBtn = document.getElementById('copy-comments-btn');
+  list.innerHTML = '';
+  if (results.length === 0) {
+    list.style.display = 'none';
+    hint.style.display = '';
+    hint.textContent = 'コメントが見つかりませんでした。';
+    copyBtn.disabled = true;
+    return;
+  }
+  hint.style.display = 'none';
+  list.style.display = '';
+  for (const r of results) {
+    const li = document.createElement('li');
+    li.className = 'comment-item';
+    const badges = document.createElement('div');
+    badges.className = 'comment-badges';
+    const mkBadge = (cls, text) => {
+      const s = document.createElement('span');
+      s.className = 'comment-badge ' + cls;
+      s.textContent = text;
+      return s;
+    };
+    badges.appendChild(mkBadge('comment-badge--page', 'P' + r.page));
+    badges.appendChild(mkBadge('comment-badge--type', annTypeJa(r.subtype)));
+    if (r.author) badges.appendChild(mkBadge('comment-badge--author', r.author));
+    li.appendChild(badges);
+    if (r.markedText) {
+      const p = document.createElement('p');
+      p.className = 'comment-marked-text';
+      p.textContent = r.markedText;
+      li.appendChild(p);
+    }
+    if (r.contents) {
+      const p = document.createElement('p');
+      p.className = 'comment-body';
+      p.textContent = r.contents;
+      li.appendChild(p);
+    }
+    list.appendChild(li);
+  }
+  copyBtn.disabled = false;
+  list.dataset.plain = buildPlainText(results);
+}
+
+setupDrop('pdf-comment-drop', 'pdf-comment-input', async (file) => {
+  if (file.type !== 'application/pdf') { toast('PDFファイルを選択してください', true); return; }
+  showLoading();
+  try {
+    const pdfjsLib = await loadPdfJs();
+    const buf = await file.arrayBuffer();
+    commentsPdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+    document.getElementById('comment-file-label').textContent =
+      `読み込み済み: ${file.name} (${commentsPdfDoc.numPages}ページ)`;
+    document.getElementById('comment-file-info').style.display = '';
+    toast(commentsPdfDoc.numPages + 'ページ読み込みました');
+  } catch (err) {
+    toast('PDF読み込みエラー: ' + err.message, true);
+  } finally {
+    hideLoading();
+  }
+});
+
+document.getElementById('extract-comments-btn').addEventListener('click', extractComments);
+
+document.getElementById('copy-comments-btn').addEventListener('click', () => {
+  const plain = document.getElementById('comment-list').dataset.plain ?? '';
+  if (!plain) return;
+  navigator.clipboard.writeText(plain)
+    .then(() => toast('クリップボードにコピーしました'))
+    .catch(() => toast('コピーに失敗しました', true));
+});
